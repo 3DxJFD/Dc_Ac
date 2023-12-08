@@ -4,7 +4,7 @@
     <title>DC AC Dialog</title>
     <link rel="stylesheet" type="text/css" href="Dc_Ac.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="../js/Dc_Ac.js"></script>
+
 </head>
 <body>
     <div class="container">
@@ -19,13 +19,22 @@
         </div>
         <button id="submitBtn">Submit</button>
     </div>
+    
+    <br><br>
+    <button id="fetchAttributesBtn">Fetch Attributes</button>
+
+    <div id="fetchedAttributes">
+        <h3>Fetched Attributes</h3>
+        <p id="attributesContent">Attributes will appear here.</p>
+    </div>
 
     <script>
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            let input1 = document.getElementById('input1').value;
-            let input2 = document.getElementById('input2').value;
-            window.location.href = 'skp:handleSubmit@' + encodeURIComponent(input1 + ',' + input2);
-        });
+    document.getElementById('fetchAttributesBtn').addEventListener('click', function() {
+        window.location.href = 'skp:fetchAttributes@';
+    });
     </script>
+
+
+    <script src="../js/Dc_Ac.js"></script>
 </body>
 </html>

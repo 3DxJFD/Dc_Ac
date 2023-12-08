@@ -30,6 +30,10 @@ module IDK_Programming
                 puts "Input 1: #{input_values[0]}, Input 2: #{input_values[1]}"
             end
 
+            dialog.add_action_callback("fetchAttributes") do |context|
+                fetch_dynamic_attributes(dialog)
+            end
+
             # Set the HTML file to be displayed in the dialog
             dialog.set_file(File.join(File.dirname(__FILE__), 'html', 'Dc_Ac.html'))
 
@@ -65,6 +69,25 @@ module IDK_Programming
                 file_loaded(__FILE__)
             end
         end
+
+        def self.fetch_dynamic_attributes(dialog)
+            model = Sketchup.active_model
+            selection = model.selection
+            return unless selection.length == 1
+            
+            entity = selection[0]
+            return unless entity.is_a?(Sketchup::ComponentInstance)
+            
+            dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
+            return unless dynamic_attributes
+        
+            # Format the attributes into a string
+            attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("\n")
+            
+            # Send this string back to the HTML dialog
+            dialog.execute_script("updateAttributes(#{attributes_str.inspect})")
+        end
+        
         
         self.add_menu_item
 
