@@ -23,15 +23,14 @@ module IDK_Programming
                 :style => UI::HtmlDialog::STYLE_DIALOG
             })
 
-            dialog.add_action_callback("handleSubmit") do |context, input_data|
+            dialog.add_action_callback("getInputs") do |context, input_data|
                 # Split the input_data string into individual values
                 input_values = input_data.split(',')
-                # Now you can process these values
                 puts "Input 1: #{input_values[0]}, Input 2: #{input_values[1]}"
             end
 
-            dialog.add_action_callback("fetchAttributes") do |context|
-                fetch_dynamic_attributes(dialog)
+            dialog.add_action_callback("getDcAttributes") do |context|
+                get_dc_attributes(dialog)
             end
 
             # Set the HTML file to be displayed in the dialog
@@ -70,7 +69,7 @@ module IDK_Programming
             end
         end
 
-        def self.fetch_dynamic_attributes(dialog)
+        def self.get_dc_attributes(dialog)
             model = Sketchup.active_model
             selection = model.selection
             return unless selection.length == 1
@@ -81,13 +80,9 @@ module IDK_Programming
             dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
             return unless dynamic_attributes
         
-            # Format the attributes into a string
             attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("\n")
-            
-            # Send this string back to the HTML dialog
-            dialog.execute_script("updateAttributes(#{attributes_str.inspect})")
-        end
-        
+            dialog.execute_script("updateDcAttributesDisplay(#{attributes_str.inspect})")
+        end        
         
         self.add_menu_item
 

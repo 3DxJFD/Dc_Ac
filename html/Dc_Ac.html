@@ -17,23 +17,16 @@
             <label for="input2">Input 2:</label>
             <input type="number" id="input2" name="input2">
         </div>
-        <button id="submitBtn">Submit</button>
+        <button id="enterBtn">Enter</button>
     </div>
-    
+
     <br><br>
-    <button id="fetchAttributesBtn">Fetch Attributes</button>
+    <button id="getDcAttributesBtn">Get/Update DC Attributes</button>
 
-    <div id="fetchedAttributes">
-        <h3>Fetched Attributes</h3>
-        <p id="attributesContent">Attributes will appear here.</p>
+    <div id="dcAttributesContainer">
+        <h3>Dynamic Attributes</h3>
+        <p id="dcAttributesContent">Attributes will appear here.</p>
     </div>
-
-    <script>
-    document.getElementById('fetchAttributesBtn').addEventListener('click', function() {
-        window.location.href = 'skp:fetchAttributes@';
-    });
-    </script>
-
 
     <script src="../js/Dc_Ac.js"></script>
 </body>
