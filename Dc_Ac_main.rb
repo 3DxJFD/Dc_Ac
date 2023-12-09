@@ -6,22 +6,51 @@ module IDK_Programming
 
         PLUGIN_PATH ||= File.dirname(__FILE__)
 
+        # Module-level variable to hold the dialog reference
+        @dialog = nil
+
+        # Method to access the module-level variable
+        def self.dialog
+            @dialog
+        end
+
+        class DcSelectionObserver < Sketchup::SelectionObserver #But should this be a class or a local observer in the create_html_dialog method?
+            def onSelectionBulkChange(selection)
+                puts "Selection changed"
+                if selection.single_object?
+                    entity = selection[0]
+                    if entity.is_a?(Sketchup::ComponentInstance) && entity.attribute_dictionary("dynamic_attributes")
+                        puts "DC selected, updating attributes"
+                        IDK_Programming::Dc_Ac.update_dc_attributes_display(IDK_Programming::Dc_Ac.dialog, entity)
+                    else
+                        # Clear the attributes display if the selection is not a DC
+                        IDK_Programming::Dc_Ac.clear_dc_attributes_display(IDK_Programming::Dc_Ac.dialog)
+                    end
+                else
+                    # Clear the attributes display if there's no single object selected
+                    IDK_Programming::Dc_Ac.clear_dc_attributes_display(IDK_Programming::Dc_Ac.dialog)
+                end
+            end
+        end
+
         def self.create_html_dialog
-            dialog = UI::HtmlDialog.new(
+            @dialog = UI::HtmlDialog.new(
             {
                 :dialog_title => "DC AC",
+                :preferences_key => "com.Dc_Ac",
                 :scrollable => true,
                 :resizable => true,
-                :width => 600,
-                :height => 400,
+                :width => 300,
+                :height => 500,
                 :left => 100,
                 :top => 100,
                 :min_width => 50,
-                :min_height => 50,
-                :max_width =>1000,
-                :max_height => 1000,
                 :style => UI::HtmlDialog::STYLE_DIALOG
             })
+
+            @dialog_instance = dialog
+
+            dialog.set_file(File.join(File.dirname(__FILE__), 'html', 'Dc_Ac.html'))
 
             dialog.add_action_callback("getInputs") do |context, input_data|
                 # Split the input_data string into individual values
@@ -33,8 +62,15 @@ module IDK_Programming
                 get_dc_attributes(dialog)
             end
 
-            # Set the HTML file to be displayed in the dialog
-            dialog.set_file(File.join(File.dirname(__FILE__), 'html', 'Dc_Ac.html'))
+            # Attach the selection observer without any arguments
+            observer = DcSelectionObserver.new
+            Sketchup.active_model.selection.add_observer(observer)
+
+            # Set the on-closed callback for the dialog
+            @dialog.set_on_closed {
+                # Detach the selection observer when the dialog is closed
+                Sketchup.active_model.selection.remove_observer(observer)
+            }
 
             dialog.show
         end
@@ -47,7 +83,6 @@ module IDK_Programming
                 self.create_html_dialog
             }
         
-            # Ensure the icon path is correct
             icon_path = File.join(File.dirname(__FILE__), 'icons', 'DC-AC.png')
             cmd.small_icon = icon_path
             cmd.large_icon = icon_path
@@ -82,7 +117,24 @@ module IDK_Programming
         
             attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("\n")
             dialog.execute_script("updateDcAttributesDisplay(#{attributes_str.inspect})")
-        end        
+        end 
+        
+        def self.update_dc_attributes_display(dialog, entity)
+            puts "Updating DC attributes display"
+            dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
+            return unless dynamic_attributes
+        
+            attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("<br>")
+            puts "Attributes to display: #{attributes_str}"
+            dialog.execute_script("updateDcAttributesDisplay(#{attributes_str.inspect})") if dialog && dialog.visible?
+        end
+
+        def self.clear_dc_attributes_display(dialog)
+            puts "Clearing DC attributes display"
+            if dialog && dialog.visible?
+                dialog.execute_script("clearDcAttributesDisplay()")
+            end
+        end
         
         self.add_menu_item
 
