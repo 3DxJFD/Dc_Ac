@@ -1,30 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>DC AC Dialog</title>
-    <link rel="stylesheet" type="text/css" href="Dc_Ac.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+  <title>DC AC Dialog</title>
+  <link rel="stylesheet" type="text/css" href="dc_ac.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
+
 <body>
-    <div class="container">
-        <h2>DC AC Settings</h2>
-        <div class="form-group">
-            <label for="input1">Input 1:</label>
-            <input type="text" id="input1" name="input1">
-        </div>
-        <div class="form-group">
-            <label for="input2">Input 2:</label>
-            <input type="number" id="input2" name="input2">
-        </div>
-        <button id="enterBtn">Enter</button>
+  <div class="container">
+    <h4>DC AC Settings</h4>
+    <div class="form-group">
+      <label for="input1">Input 1:</label>
+      <input type="text" id="input1" name="input1">
     </div>
 
-    <div id="dcAttributesContainer">
-        <h3>Dynamic Attributes</h3>
-        <p id="dcAttributesContent">Attributes will appear here.</p>
+    <div class="form-group">
+      <label for="input2">Input 2:</label>
+      <input type="number" id="input2" name="input2">
     </div>
+    <button id="enterBtn">Enter</button>
+  </div>
+  <br>
+  <button id="getDcAttributesBtn">Get/Update DC Attributes</button>
+  <br>
+  <br>
+  <div id="dcAttributesContainer">
+    <h4>Dynamic Attributes</h4>
+    <p id="dcAttributesContent">Attributes will appear here.</p>
+  </div>
 
-    <script src="../js/Dc_Ac.js"></script>
+  <script src="../js/dc_ac.js"></script>
 </body>
 </html>

@@ -1,145 +1,117 @@
-puts "Executing Dc_Ac_main.rb"
+puts "Executing dc_ac_main.rb"
 require 'sketchup.rb'
 
-module IDK_Programming
-    module Dc_Ac
+module IDKProgramming
+  module DcAc
+    extend self
 
-        PLUGIN_PATH ||= File.dirname(__FILE__)
+    PREF_KEY ||= Module.nesting[0].name.gsub('::', '_')
+    PLUGIN_PATH ||= File.dirname(__FILE__)
+    @dialog = nil
+    @loaded = false
 
-        # Module-level variable to hold the dialog reference
-        @dialog = nil
-
-        # Method to access the module-level variable
-        def self.dialog
-            @dialog
-        end
-
-        class DcSelectionObserver < Sketchup::SelectionObserver #But should this be a class or a local observer in the create_html_dialog method?
-            def onSelectionBulkChange(selection)
-                puts "Selection changed"
-                if selection.single_object?
-                    entity = selection[0]
-                    if entity.is_a?(Sketchup::ComponentInstance) && entity.attribute_dictionary("dynamic_attributes")
-                        puts "DC selected, updating attributes"
-                        IDK_Programming::Dc_Ac.update_dc_attributes_display(IDK_Programming::Dc_Ac.dialog, entity)
-                    else
-                        # Clear the attributes display if the selection is not a DC
-                        IDK_Programming::Dc_Ac.clear_dc_attributes_display(IDK_Programming::Dc_Ac.dialog)
-                    end
-                else
-                    # Clear the attributes display if there's no single object selected
-                    IDK_Programming::Dc_Ac.clear_dc_attributes_display(IDK_Programming::Dc_Ac.dialog)
-                end
-            end
-        end
-
-        def self.create_html_dialog
-            @dialog = UI::HtmlDialog.new(
-            {
-                :dialog_title => "DC AC",
-                :preferences_key => "com.Dc_Ac",
-                :scrollable => true,
-                :resizable => true,
-                :width => 300,
-                :height => 500,
-                :left => 100,
-                :top => 100,
-                :min_width => 50,
-                :style => UI::HtmlDialog::STYLE_DIALOG
-            })
-
-            @dialog_instance = dialog
-
-            dialog.set_file(File.join(File.dirname(__FILE__), 'html', 'Dc_Ac.html'))
-
-            dialog.add_action_callback("getInputs") do |context, input_data|
-                # Split the input_data string into individual values
-                input_values = input_data.split(',')
-                puts "Input 1: #{input_values[0]}, Input 2: #{input_values[1]}"
-            end
-
-            dialog.add_action_callback("getDcAttributes") do |context|
-                get_dc_attributes(dialog)
-            end
-
-            # Attach the selection observer without any arguments
-            observer = DcSelectionObserver.new
-            Sketchup.active_model.selection.add_observer(observer)
-
-            # Set the on-closed callback for the dialog
-            @dialog.set_on_closed {
-                # Detach the selection observer when the dialog is closed
-                Sketchup.active_model.selection.remove_observer(observer)
-            }
-
-            dialog.show
-        end
-
-        def self.create_toolbar
-            puts "Creating DC AC Toolbar..."
-            toolbar = UI::Toolbar.new("DC AC Toolbar")
-        
-            cmd = UI::Command.new("Open HTML Dialog") {
-                self.create_html_dialog
-            }
-        
-            icon_path = File.join(File.dirname(__FILE__), 'icons', 'DC-AC.png')
-            cmd.small_icon = icon_path
-            cmd.large_icon = icon_path
-            cmd.tooltip = "Open DC AC"
-            cmd.status_bar_text = "Opens the DC AC dialog"
-            cmd.menu_text = "Open HTML Dialog"
-        
-            toolbar.add_item(cmd)
-            toolbar.show
-        end
-
-        def self.add_menu_item
-            unless file_loaded?(__FILE__)
-                menu = UI.menu('Extensions')
-                menu.add_item('Open DC AC Dialog') {
-                    self.create_html_dialog
-                }
-                file_loaded(__FILE__)
-            end
-        end
-
-        def self.get_dc_attributes(dialog)
-            model = Sketchup.active_model
-            selection = model.selection
-            return unless selection.length == 1
-            
-            entity = selection[0]
-            return unless entity.is_a?(Sketchup::ComponentInstance)
-            
-            dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
-            return unless dynamic_attributes
-        
-            attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("\n")
-            dialog.execute_script("updateDcAttributesDisplay(#{attributes_str.inspect})")
-        end 
-        
-        def self.update_dc_attributes_display(dialog, entity)
-            puts "Updating DC attributes display"
-            dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
-            return unless dynamic_attributes
-        
-            attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("<br>")
-            puts "Attributes to display: #{attributes_str}"
-            dialog.execute_script("updateDcAttributesDisplay(#{attributes_str.inspect})") if dialog && dialog.visible?
-        end
-
-        def self.clear_dc_attributes_display(dialog)
-            puts "Clearing DC attributes display"
-            if dialog && dialog.visible?
-                dialog.execute_script("clearDcAttributesDisplay()")
-            end
-        end
-        
-        self.add_menu_item
-
-        # Call create_toolbar directly
-        self.create_toolbar
-
+    def show_html_dialog
+      @dialog ||= create_dialog
+      attach_callbacks unless @dialog.visible?
+      @dialog.visible? ? @dialog.bring_to_front : @dialog.show
     end
+
+    def create_dialog
+      UI::HtmlDialog.new({
+        dialog_title: "DC AC",
+        preferences_key: PREF_KEY,
+        scrollable: true,
+        resizable: true,
+        width: 300,
+        height: 200,
+        style: UI::HtmlDialog::STYLE_DIALOG
+      }).tap { |dialog| dialog.set_file(File.join(PLUGIN_PATH, 'html', 'dc_ac.html')) }
+    end
+
+    def attach_callbacks
+      @dialog.add_action_callback("getInputs") do |_context, input_data|
+        input_values = input_data.split(',')
+        puts "Input 1: #{input_values[0]}, Input 2: #{input_values[1]}"
+      end
+
+      @dialog.add_action_callback("getDcAttributes") { |_context| get_dc_attributes(@dialog) }
+
+      @dialog.set_on_closed do
+        puts "Dialog closed, detaching observer..."
+        Sketchup.active_model.selection.remove_observer(self)
+      end
+    end
+
+    def onSelectionBulkChange(selection)
+      puts "Selection changed, currently selected: #{selection.length} items"
+      update_dc_attributes_display(selection)
+    end
+
+    def attach_observer
+      Sketchup.active_model.selection.add_observer(self) unless @observer_attached
+      @observer_attached = true
+    end
+
+    def get_dc_attributes(dialog)
+      model = Sketchup.active_model
+      selection = model.selection
+      return unless selection.length == 1 && selection[0].is_a?(Sketchup::ComponentInstance)
+      
+      entity = selection[0]
+      dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
+      return unless dynamic_attributes
+      
+      attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("\n")
+      dialog.execute_script("updateDcAttributesDisplay('#{attributes_str}')")
+    end
+
+    def update_dc_attributes_display(selection)
+      return unless @dialog && @dialog.visible?
+      entity = selection.first
+      return unless entity && entity.is_a?(Sketchup::ComponentInstance)
+
+      dynamic_attributes = entity.attribute_dictionary("dynamic_attributes")
+      return unless dynamic_attributes
+      
+      attributes_str = dynamic_attributes.map { |key, value| "#{key}: #{value}" }.join("<br>")
+      @dialog.execute_script("updateDcAttributesDisplay('#{attributes_str}')")
+    end
+
+    def clear_dc_attributes_display
+      return unless @dialog && @dialog.visible?
+      @dialog.execute_script("clearDcAttributesDisplay()")
+    end
+
+    def create_toolbar
+      puts "Creating DC AC Toolbar..."
+      toolbar = UI::Toolbar.new("DC AC Toolbar")
+      cmd = UI::Command.new("Open HTML Dialog") { show_html_dialog }
+
+      icon_path = File.join(PLUGIN_PATH, 'icons', 'dc_ac.png')
+      cmd.small_icon = icon_path
+      cmd.large_icon =icon_path
+      cmd.tooltip = "Open DC AC"
+      cmd.status_bar_text = "Opens the DC AC dialog"
+      cmd.menu_text = "Open HTML Dialog"
+
+      toolbar.add_item(cmd)
+      toolbar.show
+    end
+
+    def add_menu_item
+      unless file_loaded?(__FILE__)
+        menu = UI.menu('Extensions')
+        menu.add_item('Open DC AC Dialog') { show_html_dialog }
+        file_loaded(__FILE__)
+      end
+    end
+
+    unless @loaded
+      create_toolbar
+      add_menu_item
+      attach_observer
+      Sketchup.add_observer(self)
+      @loaded = true
+    end
+  end
 end

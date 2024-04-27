@@ -1,13 +1,16 @@
-puts "Loading Dc_Ac_loader.rb"
+puts "Loading dc_ac_loader.rb"
 
-module IDK_Programming
-  module Dc_Ac
+module IDKProgramming
+  module DcAc
 
     # Define PLUGIN_PATH constant
     PLUGIN_PATH ||= File.dirname(__FILE__)
 
     # Require the main Ruby file
-    require File.join(PLUGIN_PATH, 'Dc_Ac_main.rb')
+    require File.join(PLUGIN_PATH, 'dc_ac_main.rb')
+
+    # Define the icon path globally within the module
+    ICON_PATH = File.join(PLUGIN_PATH, "icons", "dc_ac.png").freeze 
 
     PLUGIN_PATH_HTML = File.join(PLUGIN_PATH, 'html')
     PLUGIN_PATH_IMAGE = File.join(PLUGIN_PATH, 'icons')
@@ -15,6 +18,3 @@ module IDK_Programming
 
   end
 end
-
-
-
